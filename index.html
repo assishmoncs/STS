@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STS MOCK</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="theme-toggle">
+    <button id="toggleTheme">🌙</button>
+  </div>
+
+  <div class="quiz-container">
+
+    <div class="progress-container">
+      <div id="progress-bar">
+        <span id="progress-text">(0/0)</span>
+      </div>
+    </div>
+
+    <select id="topicFilter" class="topic-filter"></select>
+
+    <div id="questionBox">
+      <h2 id="question"></h2>
+      <div id="difficulty"></div>
+      <div id="options"></div>
+      <div id="solution" class="hidden"></div>
+
+      <div class="btn-group">
+        <button id="endBtn" class="end-btn">End</button>
+        <button id="nextBtn" class="next-btn">Next</button>
+      </div>
+    </div>
+
+    <div id="scoreBox" class="hidden">
+      <div class="score-card">
+        <h2>Quiz Summary</h2>
+        <div id="scoreDetails"></div>
+        <button id="restartBtn" class="restart-btn">Restart Quiz</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -177,7 +177,12 @@ function renderReadMode() {
 
     const explanation = document.createElement("div");
     explanation.className = "explanation";
-    explanation.innerHTML = `<h3>Explanation</h3><p>${escapeHtml(q.explanation).replace(/\n/g, "<br>")}</p>`;
+    const explanationTitle = document.createElement("h3");
+    explanationTitle.textContent = "Explanation";
+    const explanationText = document.createElement("p");
+    explanationText.textContent = q.explanation;
+    explanation.appendChild(explanationTitle);
+    explanation.appendChild(explanationText);
 
     card.appendChild(options);
     card.appendChild(explanation);
@@ -324,13 +329,4 @@ function switchScreen(screen) {
   el.modeScreen.classList.toggle("hidden", screen !== "mode");
   el.readScreen.classList.toggle("hidden", screen !== "read");
   el.resultScreen.classList.toggle("hidden", screen !== "result");
-}
-
-function escapeHtml(text) {
-  return String(text)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
 }

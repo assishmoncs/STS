@@ -1,53 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>STS MOCK | Premium Quiz</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>STS Practice Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="theme-toggle">
-    <button id="toggleTheme" aria-label="Toggle Theme">🌙</button>
-  </div>
+  <button id="toggleTheme" class="theme-toggle" aria-label="Toggle theme">🌙</button>
 
-  <main class="quiz-container">
-    <header class="quiz-header">
-      <div class="progress-container">
-        <div id="progress-bar"></div>
-        <span id="progress-text">0/0</span>
-      </div>
-      <div class="filter-section" id="filterSection">
-        <select id="topicFilter" class="topic-filter"></select>
-      </div>
-    </header>
+  <main class="app-shell">
+    <section id="homeScreen" class="screen active">
+      <header class="screen-header">
+        <h1>STS Practice Hub</h1>
+        <p>Pick a mode and start learning smarter.</p>
+      </header>
 
-    <section id="questionBox" class="active-section">
-      <div class="question-meta">
-        <span id="difficulty" class="badge"></span>
+      <div class="mode-grid">
+        <button id="modeRead" class="mode-card" type="button">
+          <span class="mode-title">Read Mode</span>
+          <span class="mode-desc">View all questions, answers, and explanations.</span>
+        </button>
+
+        <button id="modeQuiz" class="mode-card" type="button">
+          <span class="mode-title">Quiz Mode</span>
+          <span class="mode-desc">Answer one by one with instant feedback.</span>
+        </button>
+
+        <button id="modeTest" class="mode-card" type="button">
+          <span class="mode-title">Test Mode</span>
+          <span class="mode-desc">Attempt all first, then submit for score.</span>
+        </button>
       </div>
-      <h2 id="question">Loading question...</h2>
-      <div id="options" class="options-grid"></div>
-      
-      <div id="solutionBox" class="solution-box hidden">
+    </section>
+
+    <section id="modeScreen" class="screen hidden">
+      <header class="screen-topbar">
+        <button id="backHomeFromMode" class="btn btn-ghost" type="button">← Home</button>
+        <span id="modeLabel" class="pill"></span>
+      </header>
+
+      <div class="progress-wrap">
+        <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+        <span id="progressText">0 / 0</span>
+      </div>
+
+      <h2 id="questionText" class="question-text">Loading question...</h2>
+      <div id="optionsList" class="options-list"></div>
+
+      <div id="explanationBox" class="explanation hidden">
         <h3>Explanation</h3>
-        <p id="solutionText"></p>
+        <p id="explanationText"></p>
       </div>
 
-      <footer class="quiz-footer">
-        <button id="endBtn" class="btn-secondary">End Quiz</button>
-        <button id="nextBtn" class="btn-primary">Next Question</button>
+      <footer class="actions-row">
+        <button id="nextBtn" class="btn btn-primary" type="button">Next</button>
+        <button id="submitTestBtn" class="btn btn-primary hidden" type="button">Submit Test</button>
       </footer>
     </section>
 
-    <section id="scoreBox" class="hidden">
-      <div class="score-card">
-        <h2>Quiz Summary</h2>
-        <div id="scoreDetails"></div>
-        <button id="restartBtn" class="btn-primary full-width">Restart Quiz</button>
+    <section id="readScreen" class="screen hidden">
+      <header class="screen-topbar sticky">
+        <button id="backHomeFromRead" class="btn btn-ghost" type="button">← Home</button>
+        <span class="pill">Read Mode</span>
+      </header>
+      <div id="readList" class="read-list"></div>
+    </section>
+
+    <section id="resultScreen" class="screen hidden">
+      <header class="screen-header">
+        <h2 id="resultTitle">Result</h2>
+        <p id="resultSubtitle"></p>
+      </header>
+      <div id="resultStats" class="result-grid"></div>
+      <div class="actions-row">
+        <button id="backHomeFromResult" class="btn btn-ghost" type="button">Home</button>
+        <button id="restartModeBtn" class="btn btn-primary" type="button">Try Again</button>
       </div>
     </section>
   </main>
@@ -55,4 +86,3 @@
   <script src="script.js"></script>
 </body>
 </html>
-

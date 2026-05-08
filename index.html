@@ -3,45 +3,56 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>STS MOCK</title>
+  <title>STS MOCK | Premium Quiz</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="theme-toggle">
-    <button id="toggleTheme">🌙</button>
+    <button id="toggleTheme" aria-label="Toggle Theme">🌙</button>
   </div>
 
-  <div class="quiz-container">
-
-    <div class="progress-container">
-      <div id="progress-bar">
-        <span id="progress-text">(0/0)</span>
+  <main class="quiz-container">
+    <header class="quiz-header">
+      <div class="progress-container">
+        <div id="progress-bar"></div>
+        <span id="progress-text">0/0</span>
       </div>
-    </div>
-
-    <select id="topicFilter" class="topic-filter"></select>
-
-    <div id="questionBox">
-      <h2 id="question"></h2>
-      <div id="difficulty"></div>
-      <div id="options"></div>
-      <div id="solution" class="hidden"></div>
-
-      <div class="btn-group">
-        <button id="endBtn" class="end-btn">End</button>
-        <button id="nextBtn" class="next-btn">Next</button>
+      <div class="filter-section" id="filterSection">
+        <select id="topicFilter" class="topic-filter"></select>
       </div>
-    </div>
+    </header>
 
-    <div id="scoreBox" class="hidden">
+    <section id="questionBox" class="active-section">
+      <div class="question-meta">
+        <span id="difficulty" class="badge"></span>
+      </div>
+      <h2 id="question">Loading question...</h2>
+      <div id="options" class="options-grid"></div>
+      
+      <div id="solutionBox" class="solution-box hidden">
+        <h3>Explanation</h3>
+        <p id="solutionText"></p>
+      </div>
+
+      <footer class="quiz-footer">
+        <button id="endBtn" class="btn-secondary">End Quiz</button>
+        <button id="nextBtn" class="btn-primary">Next Question</button>
+      </footer>
+    </section>
+
+    <section id="scoreBox" class="hidden">
       <div class="score-card">
         <h2>Quiz Summary</h2>
         <div id="scoreDetails"></div>
-        <button id="restartBtn" class="restart-btn">Restart Quiz</button>
+        <button id="restartBtn" class="btn-primary full-width">Restart Quiz</button>
       </div>
-    </div>
-  </div>
+    </section>
+  </main>
 
   <script src="script.js"></script>
 </body>
 </html>
+

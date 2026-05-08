@@ -44,7 +44,10 @@ async function init() {
     const rawData = await response.json();
     state.allQuestions = normalizeQuestions(rawData);
   } catch (error) {
-    el.homeScreen.innerHTML = `<p>Failed to load quiz data.</p>`;
+    el.homeScreen.textContent = "";
+    const errorText = document.createElement("p");
+    errorText.textContent = "Failed to load quiz data.";
+    el.homeScreen.appendChild(errorText);
     console.error("Failed to load quiz:", error);
     return;
   }
@@ -284,18 +287,31 @@ function showResult(title) {
 
   el.resultTitle.textContent = title;
   el.resultSubtitle.textContent = `${correct} of ${total} correct`;
-  el.resultStats.innerHTML = [
-    makeStat("Score", `${scorePct}%`),
-    makeStat("Correct", String(correct)),
-    makeStat("Wrong", String(wrong)),
-    makeStat("Skipped", String(skipped))
-  ].join("");
+  el.resultStats.textContent = "";
+  [
+    ["Score", `${scorePct}%`],
+    ["Correct", String(correct)],
+    ["Wrong", String(wrong)],
+    ["Skipped", String(skipped)]
+  ].forEach(([label, value]) => {
+    el.resultStats.appendChild(makeStat(label, value));
+  });
 
   switchScreen("result");
 }
 
 function makeStat(label, value) {
-  return `<div class="stat"><span class="stat-label">${label}</span><span class="stat-value">${value}</span></div>`;
+  const wrapper = document.createElement("div");
+  wrapper.className = "stat";
+  const labelEl = document.createElement("span");
+  labelEl.className = "stat-label";
+  labelEl.textContent = label;
+  const valueEl = document.createElement("span");
+  valueEl.className = "stat-value";
+  valueEl.textContent = value;
+  wrapper.appendChild(labelEl);
+  wrapper.appendChild(valueEl);
+  return wrapper;
 }
 
 function updateProgress() {

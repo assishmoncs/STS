@@ -1,211 +1,348 @@
-let quizData = [];
-let currentIndex = 0;
-let score = 0;
-let attempted = 0;
-let quizEnded = false;
-let filteredQuestions = [];
+const state = {
+  allQuestions: [],
+  currentQuestions: [],
+  mode: null,
+  currentIndex: 0,
+  selectedAnswers: []
+};
 
-const elements = {
-  question: document.getElementById("question"),
-  options: document.getElementById("options"),
-  difficulty: document.getElementById("difficulty"),
-  solutionBox: document.getElementById("solutionBox"),
-  solutionText: document.getElementById("solutionText"),
-  progressBar: document.getElementById("progress-bar"),
-  progressText: document.getElementById("progress-text"),
+const el = {
+  homeScreen: document.getElementById("homeScreen"),
+  modeScreen: document.getElementById("modeScreen"),
+  readScreen: document.getElementById("readScreen"),
+  resultScreen: document.getElementById("resultScreen"),
+  modeRead: document.getElementById("modeRead"),
+  modeQuiz: document.getElementById("modeQuiz"),
+  modeTest: document.getElementById("modeTest"),
+  backHomeFromMode: document.getElementById("backHomeFromMode"),
+  backHomeFromRead: document.getElementById("backHomeFromRead"),
+  backHomeFromResult: document.getElementById("backHomeFromResult"),
+  restartModeBtn: document.getElementById("restartModeBtn"),
+  modeLabel: document.getElementById("modeLabel"),
+  progressBar: document.getElementById("progressBar"),
+  progressText: document.getElementById("progressText"),
+  questionText: document.getElementById("questionText"),
+  optionsList: document.getElementById("optionsList"),
+  explanationBox: document.getElementById("explanationBox"),
+  explanationText: document.getElementById("explanationText"),
   nextBtn: document.getElementById("nextBtn"),
-  endBtn: document.getElementById("endBtn"),
-  restartBtn: document.getElementById("restartBtn"),
-  topicFilter: document.getElementById("topicFilter"),
-  scoreBox: document.getElementById("scoreBox"),
-  questionBox: document.getElementById("questionBox"),
-  scoreDetails: document.getElementById("scoreDetails"),
+  submitTestBtn: document.getElementById("submitTestBtn"),
+  readList: document.getElementById("readList"),
+  resultTitle: document.getElementById("resultTitle"),
+  resultSubtitle: document.getElementById("resultSubtitle"),
+  resultStats: document.getElementById("resultStats"),
   toggleTheme: document.getElementById("toggleTheme")
 };
 
 document.addEventListener("DOMContentLoaded", init);
 
 async function init() {
+  bindEvents();
+
   try {
-    const res = await fetch("quiz.json");
-    const data = await res.json();
-    
-    // Standardize data format (matching actual quiz.json)
-    quizData = data.map((item, index) => ({
-      id: index,
-      question: item.Question,
-      choices: item.Choices,
-      answerKey: item.AnswerKey, // Number 1-4
-      explanation: item.Solution || "No explanation provided.",
-      topic: item.Topic || "General",
-      difficulty: item.Difficulty || "A"
-    }));
-
-    setupFilters();
-    attachListeners();
-    resetQuiz();
+    const response = await fetch("quiz.json");
+    const rawData = await response.json();
+    state.allQuestions = normalizeQuestions(rawData);
   } catch (error) {
-
-
-    console.error("Failed to load quiz data:", error);
-    elements.question.textContent = "Error loading quiz. Please try again later.";
-  }
-}
-
-function setupFilters() {
-  const topics = [...new Set(quizData.map(q => q.topic))];
-  elements.topicFilter.innerHTML = `<option value="">All Topics</option>` + 
-    topics.map(t => `<option value="${t}">${t}</option>`).join("");
-}
-
-function attachListeners() {
-  elements.topicFilter.addEventListener("change", resetQuiz);
-  elements.toggleTheme.addEventListener("click", toggleTheme);
-  elements.nextBtn.addEventListener("click", handleNext);
-  elements.endBtn.addEventListener("click", endQuiz);
-  elements.restartBtn.addEventListener("click", resetQuiz);
-}
-
-function toggleTheme() {
-  document.body.classList.toggle("light");
-  elements.toggleTheme.textContent = document.body.classList.contains("light") ? "☀️" : "🌙";
-}
-
-function resetQuiz() {
-  currentIndex = 0;
-  score = 0;
-  attempted = 0;
-  quizEnded = false;
-  
-  const topic = elements.topicFilter.value;
-  filteredQuestions = topic ? quizData.filter(q => q.topic === topic) : quizData;
-  
-  // Shuffle questions for variety if needed (optional)
-  // filteredQuestions.sort(() => Math.random() - 0.5);
-
-  elements.scoreBox.classList.add("hidden");
-  elements.questionBox.classList.remove("hidden");
-  loadQuestion();
-}
-
-function loadQuestion() {
-  if (currentIndex >= filteredQuestions.length) {
-    endQuiz();
+    el.homeScreen.textContent = "";
+    const errorText = document.createElement("p");
+    errorText.textContent = "Failed to load quiz data.";
+    el.homeScreen.appendChild(errorText);
+    console.error("Failed to load quiz:", error);
     return;
   }
 
-  const q = filteredQuestions[currentIndex];
-  
-  elements.question.textContent = q.question;
-  elements.difficulty.textContent = getDifficultyLabel(q.difficulty);
-  elements.solutionBox.classList.add("hidden");
-  elements.nextBtn.textContent = currentIndex === filteredQuestions.length - 1 ? "Finish Quiz" : "Next Question";
-  
-  // Render options
-  elements.options.innerHTML = "";
-  q.choices.forEach((choice, index) => {
-    if (!choice) return; // Skip empty options
-    const btn = document.createElement("button");
-    btn.textContent = choice;
-    btn.onclick = () => checkAnswer(index, btn);
-    elements.options.appendChild(btn);
+  showHome();
+}
+
+function bindEvents() {
+  el.modeRead.addEventListener("click", startReadMode);
+  el.modeQuiz.addEventListener("click", () => startQuestionMode("quiz"));
+  el.modeTest.addEventListener("click", () => startQuestionMode("test"));
+
+  el.backHomeFromMode.addEventListener("click", showHome);
+  el.backHomeFromRead.addEventListener("click", showHome);
+  el.backHomeFromResult.addEventListener("click", showHome);
+  el.restartModeBtn.addEventListener("click", () => {
+    if (!state.mode) return showHome();
+    if (state.mode === "read") return startReadMode();
+    startQuestionMode(state.mode);
   });
 
+  el.nextBtn.addEventListener("click", handleNext);
+  el.submitTestBtn.addEventListener("click", submitTest);
+
+  el.toggleTheme.addEventListener("click", () => {
+    document.body.classList.toggle("light");
+    el.toggleTheme.textContent = document.body.classList.contains("light") ? "☀️" : "🌙";
+  });
+}
+
+function normalizeQuestions(rawData) {
+  return rawData
+    .map((item, index) => {
+      const choices = buildChoices(item);
+      const correctIndex = getCorrectIndex(item.correct_answer ?? item.AnswerKey ?? item.answerKey, choices.length);
+
+      return {
+        id: index,
+        question: item.question ?? item.Question ?? `Question ${index + 1}`,
+        choices,
+        correctIndex,
+        explanation: item.explanation ?? item.Solution ?? "No explanation provided."
+      };
+    })
+    .filter(q => q.choices.length > 1);
+}
+
+function buildChoices(item) {
+  if (Array.isArray(item.Choices) && item.Choices.length) {
+    return item.Choices.filter(Boolean).map(text => String(text).trim());
+  }
+
+  const optionEntries = Object.keys(item)
+    .filter(key => /^option\d+$/i.test(key))
+    .sort((a, b) => Number(a.match(/\d+/)[0]) - Number(b.match(/\d+/)[0]))
+    .map(key => item[key])
+    .filter(value => value !== undefined && value !== null && String(value).trim() !== "")
+    .map(value => String(value));
+
+  return optionEntries;
+}
+
+function getCorrectIndex(answerKey, maxChoices) {
+  if (typeof answerKey === "number") {
+    return clamp(answerKey - 1, 0, maxChoices - 1);
+  }
+
+  const key = String(answerKey || "").trim().toUpperCase();
+
+  if (/^\d+$/.test(key)) {
+    return clamp(Number(key) - 1, 0, maxChoices - 1);
+  }
+
+  if (/^[A-Z]$/.test(key)) {
+    return clamp(key.charCodeAt(0) - 65, 0, maxChoices - 1);
+  }
+
+  return 0;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function showHome() {
+  state.mode = null;
+  state.currentIndex = 0;
+  state.selectedAnswers = [];
+  switchScreen("home");
+}
+
+function startReadMode() {
+  state.mode = "read";
+  renderReadMode();
+  switchScreen("read");
+}
+
+function startQuestionMode(mode) {
+  state.mode = mode;
+  state.currentQuestions = [...state.allQuestions];
+  state.currentIndex = 0;
+  state.selectedAnswers = new Array(state.currentQuestions.length).fill(null);
+  el.modeLabel.textContent = mode === "quiz" ? "Quiz Mode" : "Test Mode";
+  renderCurrentQuestion();
+  switchScreen("mode");
+}
+
+function renderReadMode() {
+  el.readList.innerHTML = "";
+
+  state.allQuestions.forEach((q, idx) => {
+    const card = document.createElement("article");
+    card.className = "read-card";
+
+    const title = document.createElement("h3");
+    title.textContent = `${idx + 1}. ${q.question}`;
+    card.appendChild(title);
+
+    const options = document.createElement("div");
+    options.className = "options-list";
+
+    q.choices.forEach((choice, optionIndex) => {
+      const option = document.createElement("button");
+      option.type = "button";
+      option.disabled = true;
+      option.className = `option-btn ${optionIndex === q.correctIndex ? "correct" : ""}`;
+      option.textContent = `${String.fromCharCode(65 + optionIndex)}. ${choice}`;
+      options.appendChild(option);
+    });
+
+    const explanation = document.createElement("div");
+    explanation.className = "explanation";
+    const explanationTitle = document.createElement("h3");
+    explanationTitle.textContent = "Explanation";
+    const explanationText = document.createElement("p");
+    explanationText.textContent = q.explanation;
+    explanation.appendChild(explanationTitle);
+    explanation.appendChild(explanationText);
+
+    card.appendChild(options);
+    card.appendChild(explanation);
+    el.readList.appendChild(card);
+  });
+}
+
+function renderCurrentQuestion() {
+  const total = state.currentQuestions.length;
+  const question = state.currentQuestions[state.currentIndex];
+
+  if (!question) return;
+
+  el.questionText.textContent = question.question;
+  el.optionsList.innerHTML = "";
+  el.explanationBox.classList.add("hidden");
+  el.explanationText.textContent = "";
+
+  const chosen = state.selectedAnswers[state.currentIndex];
+
+  question.choices.forEach((choice, optionIndex) => {
+    const optionBtn = document.createElement("button");
+    optionBtn.type = "button";
+    optionBtn.className = "option-btn";
+    optionBtn.textContent = `${String.fromCharCode(65 + optionIndex)}. ${choice}`;
+
+    if (state.mode === "quiz") {
+      optionBtn.addEventListener("click", () => handleQuizAnswer(optionIndex));
+    } else {
+      optionBtn.addEventListener("click", () => handleTestAnswer(optionIndex));
+      if (chosen === optionIndex) optionBtn.classList.add("selected");
+    }
+
+    el.optionsList.appendChild(optionBtn);
+  });
+
+  if (state.mode === "quiz" && chosen !== null) {
+    paintQuizFeedback();
+  }
+
   updateProgress();
+  updateModeActions();
 }
 
-function getDifficultyLabel(code) {
-  switch(code) {
-    case 'E': return "Easy";
-    case 'A': return "Average";
-    case 'T': return "Tough";
-    default: return "Average";
-  }
+function handleQuizAnswer(selectedIndex) {
+  if (state.selectedAnswers[state.currentIndex] !== null) return;
+  state.selectedAnswers[state.currentIndex] = selectedIndex;
+  paintQuizFeedback();
+  updateModeActions();
 }
 
-function checkAnswer(selectedIndex, selectedBtn) {
-  if (elements.solutionBox.classList.contains("hidden") === false) return; // Prevent multiple clicks
+function paintQuizFeedback() {
+  const question = state.currentQuestions[state.currentIndex];
+  const selected = state.selectedAnswers[state.currentIndex];
+  const buttons = el.optionsList.querySelectorAll(".option-btn");
 
-  const q = filteredQuestions[currentIndex];
-  const correctIdx = getCorrectIndex(q.answerKey);
-  const allBtns = elements.options.querySelectorAll("button");
-  
-  attempted++;
-  allBtns.forEach(btn => btn.disabled = true);
+  buttons.forEach((btn, index) => {
+    btn.disabled = true;
+    if (index === question.correctIndex) btn.classList.add("correct");
+    if (index === selected && selected !== question.correctIndex) btn.classList.add("wrong");
+  });
 
-  if (selectedIndex === correctIdx) {
-    selectedBtn.classList.add("correct");
-    score++;
-  } else {
-    selectedBtn.classList.add("wrong");
-    allBtns[correctIdx].classList.add("correct");
-  }
-
-  // Show explanation
-  elements.solutionText.textContent = q.explanation;
-  elements.solutionBox.classList.remove("hidden");
-  
-  // Scroll to solution if on mobile
-  if (window.innerWidth < 768) {
-    elements.solutionBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
+  el.explanationText.textContent = question.explanation;
+  el.explanationBox.classList.remove("hidden");
 }
 
-function getCorrectIndex(key) {
-  if (typeof key === 'number') return key - 1;
-  const map = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
-  return map[key] || 0;
+function handleTestAnswer(selectedIndex) {
+  state.selectedAnswers[state.currentIndex] = selectedIndex;
+  const buttons = el.optionsList.querySelectorAll(".option-btn");
+  buttons.forEach((btn, idx) => btn.classList.toggle("selected", idx === selectedIndex));
+  updateModeActions();
 }
 
 function handleNext() {
-  if (elements.solutionBox.classList.contains("hidden")) {
-    // If user hasn't answered, maybe show a hint or just skip?
-    // Let's allow skipping but count as unattempted.
+  if (state.currentIndex < state.currentQuestions.length - 1) {
+    state.currentIndex += 1;
+    renderCurrentQuestion();
+    return;
   }
-  
-  currentIndex++;
-  if (currentIndex < filteredQuestions.length) {
-    loadQuestion();
-  } else {
-    endQuiz();
+
+  if (state.mode === "quiz") {
+    showResult("Quiz complete");
   }
+}
+
+function submitTest() {
+  showResult("Test submitted");
+}
+
+function showResult(title) {
+  const total = state.currentQuestions.length;
+  const attempted = state.selectedAnswers.filter(v => v !== null).length;
+  const correct = state.currentQuestions.reduce((sum, question, index) => {
+    return sum + (state.selectedAnswers[index] === question.correctIndex ? 1 : 0);
+  }, 0);
+  const wrong = attempted - correct;
+  const skipped = total - attempted;
+  const scorePct = total ? ((correct / total) * 100).toFixed(1) : "0.0";
+
+  el.resultTitle.textContent = title;
+  el.resultSubtitle.textContent = `${correct} of ${total} correct`;
+  el.resultStats.textContent = "";
+  [
+    ["Score", `${scorePct}%`],
+    ["Correct", String(correct)],
+    ["Wrong", String(wrong)],
+    ["Skipped", String(skipped)]
+  ].forEach(([label, value]) => {
+    el.resultStats.appendChild(makeStat(label, value));
+  });
+
+  switchScreen("result");
+}
+
+function makeStat(label, value) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "stat";
+  const labelEl = document.createElement("span");
+  labelEl.className = "stat-label";
+  labelEl.textContent = label;
+  const valueEl = document.createElement("span");
+  valueEl.className = "stat-value";
+  valueEl.textContent = value;
+  wrapper.appendChild(labelEl);
+  wrapper.appendChild(valueEl);
+  return wrapper;
 }
 
 function updateProgress() {
-  const total = filteredQuestions.length;
-  const progress = ((currentIndex + 1) / total) * 100;
-  elements.progressBar.style.width = `${progress}%`;
-  elements.progressText.textContent = `${currentIndex + 1} of ${total}`;
+  const total = state.currentQuestions.length;
+  const current = state.currentIndex + 1;
+  const percent = total ? (current / total) * 100 : 0;
+  el.progressBar.style.width = `${percent}%`;
+  el.progressText.textContent = `${current} / ${total}`;
 }
 
-function endQuiz() {
-  quizEnded = true;
-  elements.questionBox.classList.add("hidden");
-  elements.scoreBox.classList.remove("hidden");
+function updateModeActions() {
+  const isLast = state.currentIndex === state.currentQuestions.length - 1;
+  const hasSelected = state.selectedAnswers[state.currentIndex] !== null;
 
-  const total = filteredQuestions.length;
-  const unattempted = total - attempted;
-  const wrong = attempted - score;
-  const accuracy = attempted > 0 ? ((score / attempted) * 100).toFixed(1) : 0;
+  if (state.mode === "quiz") {
+    el.nextBtn.classList.remove("hidden");
+    el.submitTestBtn.classList.add("hidden");
+    el.nextBtn.disabled = !hasSelected;
+    el.nextBtn.textContent = isLast ? "Finish Quiz" : "Next";
+    return;
+  }
 
-  elements.scoreDetails.innerHTML = `
-    <div class="score-summary">
-      <div class="score-item">
-        <span class="score-label">Accuracy</span>
-        <span class="score-value">${accuracy}%</span>
-      </div>
-      <div class="score-item">
-        <span class="score-label">Correct</span>
-        <span class="score-value">${score}</span>
-      </div>
-      <div class="score-item">
-        <span class="score-label">Wrong</span>
-        <span class="score-value">${wrong}</span>
-      </div>
-      <div class="score-item">
-        <span class="score-label">Skipped</span>
-        <span class="score-value">${unattempted}</span>
-      </div>
-    </div>
-  `;
+  el.nextBtn.classList.toggle("hidden", isLast);
+  el.submitTestBtn.classList.toggle("hidden", !isLast);
+  el.nextBtn.disabled = false;
+  el.submitTestBtn.disabled = false;
+}
+
+function switchScreen(screen) {
+  el.homeScreen.classList.toggle("hidden", screen !== "home");
+  el.modeScreen.classList.toggle("hidden", screen !== "mode");
+  el.readScreen.classList.toggle("hidden", screen !== "read");
+  el.resultScreen.classList.toggle("hidden", screen !== "result");
 }

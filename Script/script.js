@@ -40,7 +40,7 @@ async function init() {
   bindEvents();
 
   try {
-    const response = await fetch("quiz.json");
+    const response = await fetch("Json/quiz.json");
     const rawData = await response.json();
     state.allQuestions = normalizeQuestions(rawData);
   } catch (error) {
